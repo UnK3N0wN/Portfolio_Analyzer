@@ -55,6 +55,23 @@ def refresh_watchlist_item_prices(user):
     return updated
 
 
+def refresh_alert_prices(user):
+    """Sync alert current prices with the latest market quote."""
+    updated = 0
+    for alert in PriceAlert.objects.filter(user=user):
+        data = fetch_stock_data(alert.symbol)
+        if not data:
+            continue
+
+        current_price = Decimal(str(data['current_price']))
+        if alert.current_price != current_price:
+            alert.current_price = current_price
+            alert.save(update_fields=['current_price'])
+            updated += 1
+
+    return updated
+
+
 def ensure_todays_snapshot(portfolio):
     today = date.today()
     PortfolioSnapshot.objects.update_or_create(
@@ -758,14 +775,17 @@ def price_alerts(request):
             alert      = form.save(commit=False)
             alert.user = request.user
             alert.save()
+            refresh_alert_prices(request.user)
             messages.success(request, f'Alert set for {alert.symbol}!')
             return redirect('portfolio:price_alerts')
     else:
         form = PriceAlertForm()
 
+    refresh_alert_prices(request.user)
+    alerts = PriceAlert.objects.filter(user=request.user)
     return render(request, 'portfolio/price_alerts.html', {
         'form':   form,
-        'alerts': PriceAlert.objects.filter(user=request.user),
+        'alerts': alerts,
     })
 
 

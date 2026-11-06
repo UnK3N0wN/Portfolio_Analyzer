@@ -263,12 +263,27 @@ class WatchlistViewTests(TestCase):
         self.assertContains(response, '$310.50')
         mock_fetch.assert_called_with('TSLA')
 
+    @patch('portfolio.views.fetch_stock_data')
+    def test_alert_page_refreshes_live_prices(self, mock_fetch):
+        alert = PriceAlert.objects.create(
+            user=self.user, symbol='AAPL', name='Apple Inc.',
+            alert_type='above', target_price=Decimal('200'), current_price=Decimal('0'),
+        )
+        mock_fetch.return_value = {'current_price': 205.25}
+
+        response = self.client.get(reverse('portfolio:price_alerts'))
+
+        alert.refresh_from_db()
+        self.assertEqual(float(alert.current_price), 205.25)
+        self.assertContains(response, '$205.25')
+        mock_fetch.assert_called_with('AAPL')
+
     def test_delete_from_watchlist(self):
         item = WatchlistItem.objects.create(user=self.user, symbol='TSLA', name='Tesla Inc.')
         self.client.post(reverse('portfolio:delete_watchlist', args=[item.id]))
         self.assertFalse(WatchlistItem.objects.filter(id=item.id).exists())
- 
- 
+
+
 class HoldingDetailViewTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='grace', password='pw12345')
