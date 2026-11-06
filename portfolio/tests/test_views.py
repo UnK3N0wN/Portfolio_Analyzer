@@ -241,12 +241,28 @@ class WatchlistViewTests(TestCase):
         self.user = User.objects.create_user(username='frank', password='pw12345')
         self.client.login(username='frank', password='pw12345')
  
-    def test_add_to_watchlist(self):
+    @patch('portfolio.views.fetch_stock_data')
+    def test_add_to_watchlist(self, mock_fetch):
+        mock_fetch.return_value = {'current_price': 310.5}
         self.client.post(reverse('portfolio:watchlist'), {
             'symbol': 'TSLA', 'name': 'Tesla Inc.', 'asset_type': 'stock',
         })
-        self.assertTrue(WatchlistItem.objects.filter(user=self.user, symbol='TSLA').exists())
- 
+        item = WatchlistItem.objects.get(user=self.user, symbol='TSLA')
+        self.assertEqual(float(item.current_price), 310.5)
+        mock_fetch.assert_called_with('TSLA')
+
+    @patch('portfolio.views.fetch_stock_data')
+    def test_watchlist_page_refreshes_live_price(self, mock_fetch):
+        item = WatchlistItem.objects.create(user=self.user, symbol='TSLA', name='Tesla Inc.')
+        mock_fetch.return_value = {'current_price': 310.5}
+
+        response = self.client.get(reverse('portfolio:watchlist'))
+
+        item.refresh_from_db()
+        self.assertEqual(float(item.current_price), 310.5)
+        self.assertContains(response, '$310.50')
+        mock_fetch.assert_called_with('TSLA')
+
     def test_delete_from_watchlist(self):
         item = WatchlistItem.objects.create(user=self.user, symbol='TSLA', name='Tesla Inc.')
         self.client.post(reverse('portfolio:delete_watchlist', args=[item.id]))

@@ -1,6 +1,7 @@
 import io
 import csv
 import json
+from decimal import Decimal
 from django.http import HttpResponse
 import csv
 import io
@@ -35,6 +36,24 @@ except ImportError:
 def get_or_create_portfolio(user):
     portfolio, _ = Portfolio.objects.get_or_create(user=user)
     return portfolio
+
+
+def refresh_watchlist_item_prices(user):
+    """Sync the stored watchlist price with the latest market quote."""
+    updated = 0
+    for item in WatchlistItem.objects.filter(user=user):
+        data = fetch_stock_data(item.symbol)
+        if not data:
+            continue
+
+        current_price = Decimal(str(data['current_price']))
+        if item.current_price != current_price:
+            item.current_price = current_price
+            item.save(update_fields=['current_price'])
+            updated += 1
+
+    return updated
+
 
 def ensure_todays_snapshot(portfolio):
     today = date.today()
@@ -780,13 +799,22 @@ def watchlist(request):
                 user=request.user, symbol=symbol,
                 defaults={'name': name, 'asset_type': asset_type}
             )
+            if created:
+                item.name = name
+                item.asset_type = asset_type
+                item.save(update_fields=['name', 'asset_type'])
+
+            refresh_watchlist_item_prices(request.user)
             messages.success(request, f'{symbol} {"added to" if created else "already in"} watchlist.')
             return redirect('portfolio:watchlist')
     else:
         form = WatchlistForm()
+
+    refresh_watchlist_item_prices(request.user)
+    items = WatchlistItem.objects.filter(user=request.user)
     return render(request, 'portfolio/watchlist.html', {
         'form':  form,
-        'items': WatchlistItem.objects.filter(user=request.user),
+        'items': items,
     })
 
 
