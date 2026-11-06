@@ -5,15 +5,17 @@ Helper functions to prepare portfolio data for AI analysis.
 
 def get_portfolio_summary(portfolio):
     """Convert portfolio object into a clean text summary for the LLM."""
-    holdings = portfolio.holdings.all()
+    holdings = list(portfolio.holdings.all())
 
     if not holdings:
         return "The portfolio is currently empty."
 
+    metrics = portfolio.get_metrics(holdings)
+
     lines = [f"Portfolio: {portfolio.name}"]
-    lines.append(f"Total Value:    ${portfolio.total_value():.2f}")
-    lines.append(f"Total Invested: ${portfolio.total_invested():.2f}")
-    lines.append(f"Total P/L:      ${portfolio.total_profit_loss():.2f} ({portfolio.profit_loss_percent():.2f}%)")
+    lines.append(f"Total Value:    ${metrics['total_value']:.2f}")
+    lines.append(f"Total Invested: ${metrics['total_invested']:.2f}")
+    lines.append(f"Total P/L:      ${metrics['total_profit_loss']:.2f} ({metrics['profit_loss_percent']:.2f}%)")
     lines.append("")
     lines.append("Holdings:")
 
@@ -45,8 +47,8 @@ def format_currency(value):
 
 def get_asset_allocation(portfolio):
     """Return asset allocation breakdown."""
-    holdings = portfolio.holdings.all()
-    total    = portfolio.total_value()
+    holdings = list(portfolio.holdings.all())
+    total = portfolio.get_metrics(holdings)['total_value']
 
     if total == 0:
         return []

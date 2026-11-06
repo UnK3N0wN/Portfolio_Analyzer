@@ -245,7 +245,8 @@ def dashboard(request):
     for alert in recently_triggered:
         messages.warning(request, f'🔔 Alert: {alert.symbol} has gone {alert.alert_type} ${alert.target_price}!')
 
-    holdings  = portfolio.holdings.all()
+    holdings  = list(portfolio.holdings.all())
+    metrics   = portfolio.get_metrics(holdings)
     snapshots = get_weekly_snapshots(portfolio)
 
     return render(request, 'portfolio/dashboard.html', {
@@ -254,10 +255,10 @@ def dashboard(request):
         'top_gainers':         sorted(holdings, key=lambda h: h.profit_loss_percent(), reverse=True)[:3],
         'top_losers':          sorted(holdings, key=lambda h: h.profit_loss_percent())[:3],
         'recent_transactions': portfolio.transactions.all()[:5],
-        'total_value':         portfolio.total_value(),
-        'total_invested':      portfolio.total_invested(),
-        'total_profit_loss':   portfolio.total_profit_loss(),
-        'profit_loss_percent': portfolio.profit_loss_percent(),
+        'total_value':         metrics['total_value'],
+        'total_invested':      metrics['total_invested'],
+        'total_profit_loss':   metrics['total_profit_loss'],
+        'profit_loss_percent': metrics['profit_loss_percent'],
         'snapshots':           snapshots,
         'active_alerts':       PriceAlert.objects.filter(user=request.user, is_active=True, is_triggered=False).count(),
     })

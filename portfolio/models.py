@@ -11,20 +11,31 @@ class Portfolio(models.Model):
     def __str__(self):
         return f'{self.user.username} - {self.name}'
 
+    def get_metrics(self, holdings=None):
+        holdings = list(self.holdings.all() if holdings is None else holdings)
+        total_value = sum(h.current_value() for h in holdings)
+        total_invested = sum(h.total_invested() for h in holdings)
+        total_profit_loss = total_value - total_invested
+        invested = total_invested
+        profit_loss_percent = 0 if invested == 0 else ((total_value - invested) / invested) * 100
+        return {
+            'total_value': total_value,
+            'total_invested': total_invested,
+            'total_profit_loss': total_profit_loss,
+            'profit_loss_percent': profit_loss_percent,
+        }
+
     def total_value(self):
-        return sum(h.current_value() for h in self.holdings.all())
+        return self.get_metrics()['total_value']
 
     def total_invested(self):
-        return sum(h.total_invested() for h in self.holdings.all())
+        return self.get_metrics()['total_invested']
 
     def total_profit_loss(self):
-        return self.total_value() - self.total_invested()
+        return self.get_metrics()['total_profit_loss']
 
     def profit_loss_percent(self):
-        invested = self.total_invested()
-        if invested == 0:
-            return 0
-        return ((self.total_value() - invested) / invested) * 100
+        return self.get_metrics()['profit_loss_percent']
 
 
 class Holding(models.Model):
