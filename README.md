@@ -88,11 +88,19 @@ python manage.py runserver
 ---
 
 ## 📸 Screenshots
-
+### Profile 
 <img width="1502" height="836" alt="Profile" src="https://github.com/user-attachments/assets/b05df704-68ff-4f8c-ae8a-d4358f07e8d7" />
+
+### Portfolio Page
 <img width="1528" height="647" alt="Portfolio" src="https://github.com/user-attachments/assets/1ad6e507-4e92-45d8-90fd-4bfe39ce3bbf" />
+
+### Dashboard Page
 <img width="1643" height="895" alt="Dashboard" src="https://github.com/user-attachments/assets/097cbbb1-079c-487b-9c6a-3b6be7d57dbd" />
+
+### AI chat
 <img width="1487" height="781" alt="ai_chat" src="https://github.com/user-attachments/assets/e3ee3675-3d2b-4908-a2e0-7c9643495284" />
+
+### Alerts Section
 <img width="1491" height="622" alt="alerts" src="https://github.com/user-attachments/assets/5f8dd53a-2b43-4f3b-b692-30b9dfdddb4a" />
 
 
